@@ -1,20 +1,34 @@
-//#include "../test/Threads_C_API_test.hpp" // zadatak 2, niti C API i sinhrona promena konteksta
-//#include "../test/Threads_CPP_API_test.hpp" // zadatak 2., niti CPP API i sinhrona promena konteksta
+// Test selection: the Makefile defines exactly one TEST_* macro from
+// `make qemu TEST=<name>` (default: full). See README for what each test does.
 
-//#include "../test/ConsumerProducer_C_API_test.h" // zadatak 3., kompletan C API sa semaforima, sinhrona promena konteksta
-//#include "../test/ConsumerProducer_CPP_Sync_API_test.hpp" // zadatak 3., kompletan CPP API sa semaforima, sinhrona promena konteksta
-
-//#include "../test/ThreadSleep_C_API_test.hpp" // thread_sleep test C API
-//#include "../test/ConsumerProducer_CPP_API_test.hpp" // zadatak 4. CPP API i asinhrona promena konteksta
+#if defined(TEST_THREADS_C)
+#include "../test/Threads_C_API_test.hpp" // threads, C API, synchronous context switch
+#elif defined(TEST_THREADS_CPP)
+#include "../test/Threads_CPP_API_test.hpp" // threads, C++ API, synchronous context switch
+#elif defined(TEST_SYNC_C)
+#include "../test/ConsumerProducer_C_API_test.h" // full C API with semaphores, synchronous context switch
+#elif defined(TEST_SYNC_CPP)
+#include "../test/ConsumerProducer_CPP_Sync_API_test.hpp" // full C++ API with semaphores, synchronous context switch
+#elif defined(TEST_SLEEP)
+#include "../test/ThreadSleep_C_API_test.hpp" // time_sleep, C API
+#elif defined(TEST_FULL)
+#include "../test/ConsumerProducer_CPP_API_test.hpp" // C++ API + preemption, test of everything
+#else
+#error "No test selected, build with: make TEST=<threads-c|threads-cpp|sync-c|sync-cpp|sleep|full>"
+#endif
 
 void userMain() {
-    //Threads_C_API_test(); // zadatak 2., niti C API i sinhrona promena konteksta
-    //Threads_CPP_API_test(); // zadatak 2., niti CPP API i sinhrona promena konteksta
-
-    //producerConsumer_C_API(); // zadatak 3., kompletan C API sa semaforima, sinhrona promena konteksta
-    //producerConsumer_CPP_Sync_API(); // zadatak 3., kompletan CPP API sa semaforima, sinhrona promena konteksta
-
-    //testSleeping(); // thread_sleep test C API
-    //ConsumerProducerCPP::testConsumerProducer(); // zadatak 4. CPP API i asinhrona promena konteksta, kompletan test svega
-
+#if defined(TEST_THREADS_C)
+    Threads_C_API_test();
+#elif defined(TEST_THREADS_CPP)
+    Threads_CPP_API_test();
+#elif defined(TEST_SYNC_C)
+    producerConsumer_C_API();
+#elif defined(TEST_SYNC_CPP)
+    producerConsumer_CPP_Sync_API();
+#elif defined(TEST_SLEEP)
+    testSleeping();
+#elif defined(TEST_FULL)
+    ConsumerProducerCPP::testConsumerProducer();
+#endif
 }

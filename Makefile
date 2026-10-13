@@ -1,8 +1,25 @@
+# No implicit rules: on case-insensitive filesystems (macOS) GNU make would
+# otherwise treat foo.S as an intermediate foo.s and delete it after the build.
+MAKEFLAGS += --no-builtin-rules
+.SUFFIXES:
+
 DIR_BUILD = build
 DIR_LIBS  = lib
 DIR_INC   = h
 
 DEBUG_FLAG = -D DEBUG_PRINT=0
+
+# Which test userMain() runs: make qemu TEST=threads-c
+TESTS = threads-c threads-cpp sync-c sync-cpp sleep full
+TEST ?= full
+ifeq ($(filter ${TEST},${TESTS}),)
+$(error Unknown TEST '${TEST}', pick one of: ${TESTS})
+endif
+TEST_FLAG = -D TEST_$(shell echo ${TEST} | tr 'a-z-' 'A-Z_')
+
+# Rebuild userMain.o whenever TEST changes
+TEST_STAMP = ${DIR_BUILD}/.test
+$(shell mkdir -p ${DIR_BUILD}; [ "`cat ${TEST_STAMP} 2>/dev/null`" = "${TEST}" ] || echo "${TEST}" > ${TEST_STAMP})
 
 KERNEL_IMG = kernel
 KERNEL_ASM = kernel.asm
@@ -63,7 +80,7 @@ CXXFLAGS += -fno-omit-frame-pointer -ffreestanding -fno-common
 CXXFLAGS += -fno-rtti -fno-threadsafe-statics
 #CXXFLAGS += -I./${DIR_LIBS} -I./${DIR_INC}
 CXXFLAGS += $(shell ${CXX} -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
-CXXFLAGS += ${DEBUG_FLAG}
+CXXFLAGS += ${DEBUG_FLAG} ${TEST_FLAG}
 CXXFLAGS += -MMD -MP -MF"${@:%.o=%.d}"
 
 LDSCRIPT = kernel.ld
@@ -72,15 +89,15 @@ LDLIBS   = --library-path . $(patsubst %,--library=:%,${LIBS})
 
 OBJECTS =
 
-SOURCES_ASM = $(shell find . -name "*.S" -printf "%P ")
+SOURCES_ASM = $(shell find . -name "*.S" | sed "s|^\./||")
 OBJECTS += $(addprefix ${DIR_BUILD}/,${SOURCES_ASM:.S=.o})
 vpath %.S $(sort $(dir ${SOURCES_ASM}))
 
-SOURCES = $(shell find . -name "*.c" -printf "%P ")
+SOURCES = $(shell find . -name "*.c" | sed "s|^\./||")
 OBJECTS += $(addprefix ${DIR_BUILD}/,${SOURCES:.c=.o})
 vpath %.c $(sort $(dir ${SOURCES}))
 
-SOURCES_CPP = $(shell find . -name "*.cpp" -printf "%P ")
+SOURCES_CPP = $(shell find . -name "*.cpp" | sed "s|^\./||")
 OBJECTS += $(addprefix ${DIR_BUILD}/,${SOURCES_CPP:.cpp=.o})
 vpath %.cpp $(sort $(dir ${SOURCES_CPP}))
 
@@ -98,12 +115,14 @@ ${DIR_BUILD}/%.o: %.c Makefile | ${DIR_BUILD}
 	@mkdir -p $(dir ${@})
 	${CC} -c ${CFLAGS} -Wa,-a,-ad,-alms=${DIR_BUILD}/${<:.c=.lst} -o ${@} ${<}
 
-${DIR_BUILD}/%.o: %.s Makefile | ${DIR_BUILD}
+${DIR_BUILD}/%.o: %.S Makefile | ${DIR_BUILD}
 	@mkdir -p $(dir ${@})
-	${AS} -c ${ASFLAGS} -o ${@} ${<}
+	${CC} -c ${ASFLAGS} -o ${@} ${<}
+
+${DIR_BUILD}/test/userMain.o: ${TEST_STAMP}
 
 ${DIR_BUILD}:
-	mkdir ${@}
+	mkdir -p ${@}
 
 clean:
 	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg

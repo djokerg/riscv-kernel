@@ -1,0 +1,10 @@
+# build output
+build/
+kernel
+kernel.asm
+.gdbinit
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
