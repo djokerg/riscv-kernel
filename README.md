@@ -1,6 +1,6 @@
 # os1: a small preemptive kernel for RISC-V
 
-[![build-and-test](https://github.com/djokerg/os1/actions/workflows/ci.yml/badge.svg)](https://github.com/djokerg/os1/actions/workflows/ci.yml)
+[![build-and-test](https://github.com/djokerg/riscv-kernel/actions/workflows/ci.yml/badge.svg)](https://github.com/djokerg/riscv-kernel/actions/workflows/ci.yml)
 
 A multithreaded kernel for a 64-bit RISC-V machine, written from scratch in C++ and assembly with
 no standard library. It boots in QEMU and provides threads, semaphores, sleeping, a heap allocator
@@ -27,7 +27,7 @@ a consumer thread prints it. Threads are switched by the timer, not by cooperati
 All you need is Docker. The script builds a toolchain image (RISC-V GCC + QEMU) on first run.
 
 ```sh
-git clone https://github.com/djokerg/os1.git && cd os1
+git clone https://github.com/djokerg/riscv-kernel.git && cd riscv-kernel
 ./run.sh                 # boot the kernel with the default test
 ./run.sh threads-cpp     # boot with a specific test (list below)
 ./run.sh test            # run every test headless, prints PASS/FAIL
